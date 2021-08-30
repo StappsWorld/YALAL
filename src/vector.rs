@@ -531,16 +531,16 @@ impl From<VectorN> for Vector3d {
 }
 impl std::cmp::PartialEq for Vector3d {
     fn eq(&self, other: &Vector3d) -> bool {
-        (self.x == other.x || (self.x - other.x).abs() < 1e-10)
-            && (self.y == other.y || (self.y - other.y).abs() < 1e-10)
-            && (self.z == other.z || (self.z - other.z).abs() < 1e-10)
-            && ((self.heading.0.is_nan() && other.heading.0.is_nan())
-                || self.heading.0 == other.heading.0
-                || (self.heading.0 - other.heading.0).abs() < 1e-10)
-            && ((self.heading.1.is_nan() && other.heading.1.is_nan())
-                || self.heading.1 == other.heading.1
-                || (self.heading.1 - other.heading.1).abs() < 1e-10)
-            && (self.mag == other.mag || (self.mag - other.mag).abs() < 1e-10)
+        // Equal with an error margin of 0.0000000001 :)
+        let fuzzy_eq = |a: f64, b: f64| a == b || (a - b).abs() < 1e-10;
+        let nan_or_fuzzy_eq = |a: f64, b: f64| a.is_nan() && b.is_nan() || fuzzy_eq(a, b);
+
+        fuzzy_eq(self.x, other.x)
+            && fuzzy_eq(self.y, other.y)
+            && fuzzy_eq(self.z, other.z)
+            && fuzzy_eq(self.mag, other.mag)
+            && nan_or_fuzzy_eq(self.heading.0, other.heading.0)
+            && nan_or_fuzzy_eq(self.heading.1, other.heading.1)
     }
 }
 impl std::fmt::Display for Vector3d {
