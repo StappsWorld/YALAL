@@ -101,7 +101,7 @@ impl Matrix {
             for j in 0..other.cols {
                 let mut sum = 0.0;
                 for k in 0..self.cols {
-                    sum += self.get(i, k).unwrap_or(0.0) * other.get(j, k).unwrap_or(0.0);
+                    sum += self.get(i, k).unwrap() * other.get(k, j).unwrap();
                 }
                 result.set(i, j, sum);
             }
@@ -144,7 +144,7 @@ impl Matrix {
             i += 1;
             j = 0;
         }
-        m.determinant() * (if (row + col) % 2 == 0 { 1.0 } else { -1.0 })
+        m.determinant() * if (row + col) % 2 == 0 { 1.0 } else { -1.0 }
     }
 
     pub fn eigenvalues_eigenvectors(&self) -> Option<Vec<(VectorN, f64)>> {
@@ -336,6 +336,15 @@ impl std::ops::Neg for Matrix {
     type Output = Matrix;
     fn neg(self) -> Matrix {
         self * -1.0
+    }
+}
+impl std::cmp::PartialEq<Matrix> for Matrix {
+    fn eq(&self, other: &Matrix) -> bool {
+        if self.rows != other.rows || self.cols != other.cols {
+            false
+        } else {
+            self.data.iter().zip(other.data.clone()).all(|(a, b)| (*a - b).abs() < 1e-10)
+        }
     }
 }
 impl std::fmt::Display for Matrix {
