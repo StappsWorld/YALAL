@@ -558,7 +558,7 @@ pub struct VectorN {
 impl VectorN {
     pub fn new(data: Vec<f64>) -> VectorN {
         let mut v = VectorN {
-            data : data.clone(),
+            data: data.clone(),
             mag: 0.0,
             angles: vec![0.0; data.len() - 1],
         };
@@ -704,7 +704,6 @@ impl VectorN {
     }
 
     // I may implement cross product later. Please see http://sciencewise.info/media/pdf/1408.5799v1.pdf
-
 }
 impl std::ops::Add<VectorN> for VectorN {
     fn add(self, other: VectorN) -> VectorN {

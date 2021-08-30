@@ -2,17 +2,17 @@
 
 //! # Yet Another Linear Algebra Library
 //! A helper library for Linear Algebra functions and data structures. It provides Vectors and Matrices for developers to use in their projects.
-//! 
+//!
 //!
 //! As an ease of use, the library provides Vectors and a Matrix structs.
-//! 
+//!
 //! ## Vectors
 //! 1. [`vector::Vector`] : A 2d Vector with an x and y component.
 //! 2. [`vector::Vector3d`] : A 3d Vector with an x, y and z component.
 //! 3. [`vector::VectorN`] : A Vector with any number of components held in a [`Vec<f64>`]
 //! ```
 //! use yalal::vector::Vector3d;
-//! 
+//!
 //! let u = Vector3d::new(1.0, 2.0, 3.0);
 //! let v = Vector3d::new(4.0, 5.0, 6.0);
 //!
@@ -27,27 +27,24 @@
 //! ```
 //! use yalal::matrix::Matrix;
 //!
-//! let m = Matrix::new(2, 2, vec![1.0, 2.0, 3.0, 4.0]);
-//! let n = Matrix::new(2, 2, vec![5.0, 6.0, 7.0, 8.0]);
+//! let m = Matrix::new(2u16, 2u16, vec![1.0, 2.0, 3.0, 4.0]).unwrap();
+//! let n = Matrix::new(2u16, 2u16, vec![5.0, 6.0, 7.0, 8.0]).unwrap();
 //!
 //! println!("{}", m); // should output [1.0, 2.0]
 //!                    //               [3.0, 4.0]
 //! println!("{}", m.rows()); // should output 2
 //! println!("{}", m.cols()); // should output 2
-//! println!("{}", m.get(0, 0)); // should output 1.0
-//! println!("{}", m.dot(&n)); // should output [19.0, 22.0]
+//! println!("{}", m.get(0u16, 0u16).unwrap()); // should output 1.0
+//! println!("{}", m.dot(&n).unwrap()); // should output [19.0, 22.0]
 //! ```
-
 
 pub mod line;
 pub mod matrix;
 pub mod vector;
 
-
-
 #[cfg(test)]
 mod tests {
-    use crate::{vector::*, matrix::*};
+    use crate::{matrix::*, vector::*};
 
     #[test]
     fn test_vector_from_angle() {
@@ -156,7 +153,10 @@ mod tests {
     fn test_vector3d_projection() {
         let u = Vector3d::new(1.0, 2.0, 3.0);
         let v = Vector3d::new(4.0, 5.0, 6.0);
-        assert_eq!(v.project(&u), Vector3d::new(16.0 / 7.0, 32.0 / 7.0, 48.0 / 7.0));
+        assert_eq!(
+            v.project(&u),
+            Vector3d::new(16.0 / 7.0, 32.0 / 7.0, 48.0 / 7.0)
+        );
     }
 
     #[test]
@@ -197,7 +197,10 @@ mod tests {
     fn test_vectorn_projection() {
         let u = VectorN::new(vec![1.0, 2.0, 3.0]);
         let v = VectorN::new(vec![4.0, 5.0, 6.0]);
-        assert_eq!(v.project(&u), VectorN::new(vec![16.0 / 7.0, 32.0 / 7.0, 48.0 / 7.0]));
+        assert_eq!(
+            v.project(&u),
+            VectorN::new(vec![16.0 / 7.0, 32.0 / 7.0, 48.0 / 7.0])
+        );
     }
 
     #[test]
@@ -235,5 +238,4 @@ mod tests {
         let v_s = Vector3d::new(4.0, 5.0, 0.0);
         assert_eq!(u.dot(&v), u_s.dot(&v_s));
     }
-    
 }
