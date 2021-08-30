@@ -227,7 +227,7 @@ impl std::ops::Div<f64> for Vector {
 }
 impl std::ops::DivAssign<f64> for Vector {
     fn div_assign(&mut self, rhs: f64) {
-        *self *= (1.0 / rhs);
+        *self *= 1.0 / rhs;
     }
 }
 impl std::ops::Neg for Vector {
@@ -495,7 +495,7 @@ impl std::ops::Div<f64> for Vector3d {
 }
 impl std::ops::DivAssign<f64> for Vector3d {
     fn div_assign(&mut self, other: f64) {
-        *self *= (1.0 / other);
+        *self *= 1.0 / other;
     }
 }
 impl std::ops::MulAssign<f64> for Vector3d {
