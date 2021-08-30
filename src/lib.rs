@@ -44,7 +44,7 @@ pub mod vector;
 
 #[cfg(test)]
 mod tests {
-    use crate::{matrix::*, vector::*};
+    use crate::vector::{Vector, Vector3d, VectorN};
 
     #[test]
     fn test_vector_from_angle() {
