@@ -7,9 +7,9 @@
 //! As an ease of use, the library provides Vectors and a Matrix structs.
 //!
 //! ## Vectors
-//! 1. [`vector::Vector`] : A 2d Vector with an x and y component.
-//! 2. [`vector::Vector3d`] : A 3d Vector with an x, y and z component.
-//! 3. [`vector::VectorN`] : A Vector with any number of components held in a [`Vec<f64>`]
+//! - [`vector::Vector`] : A 2d Vector with an x and y component.
+//! - [`vector::Vector3d`] : A 3d Vector with an x, y and z component.
+//! - [`vector::VectorN`] : A Vector with any number of components held in a [`Vec<f64>`]
 //! ```
 //! use yalal::vector::Vector3d;
 //!
@@ -22,7 +22,7 @@
 //! ```
 //!
 //! ## Matrix
-//! [`matrix::Matrix`] : a matrix defined by the dimensions (rows, cols) and a Vec<f64> of values.
+//! - [`matrix::Matrix`] : a matrix defined by the dimensions (rows, cols) and a Vec<f64> of values.
 //!
 //! ```
 //! use yalal::matrix::Matrix;
