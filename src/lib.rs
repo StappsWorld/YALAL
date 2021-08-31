@@ -44,7 +44,7 @@ pub mod vector;
 
 #[cfg(test)]
 mod tests {
-    use crate::vector::{Vector, Vector3d, VectorN};
+    use crate::{matrix::{Matrix, Triangular}, vector::{Vector, Vector3d, VectorN}};
 
     #[test]
     fn test_vector_from_angle() {
@@ -238,4 +238,173 @@ mod tests {
         let v_s = Vector3d::new(4.0, 5.0, 0.0);
         assert_eq!(u.dot(&v), u_s.dot(&v_s));
     }
+
+    #[test]
+    fn test_matrix_add() {
+        let u = Matrix::new(3usize, 3usize, vec![
+            1.0, 2.0, 3.0,
+            4.0, 5.0, 6.0,
+            7.0, 8.0, 9.0,
+        ]).unwrap();
+        let v = Matrix::new(3usize, 3usize, vec![
+            1.0, 2.0, 3.0,
+            4.0, 5.0, 6.0,
+            7.0, 8.0, 9.0,
+        ]).unwrap();
+        assert_eq!(u + v, Matrix::new(3usize, 3usize, vec![
+            2.0, 4.0, 6.0,
+            8.0, 10.0, 12.0,
+            14.0, 16.0, 18.0,
+        ]).unwrap());
+    }
+
+    #[test]
+    fn test_matrix_sub() {
+        let u = Matrix::new(3usize, 3usize, vec![
+            1.0, 2.0, 3.0,
+            4.0, 5.0, 6.0,
+            7.0, 8.0, 9.0,
+        ]).unwrap();
+        let v = Matrix::new(3usize, 3usize, vec![
+            1.0, 2.0, 3.0,
+            4.0, 5.0, 6.0,
+            7.0, 8.0, 9.0,
+        ]).unwrap();
+        assert_eq!(u - v, Matrix::new(3usize, 3usize, vec![
+            0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0,
+        ]).unwrap());
+    }
+
+    #[test]
+    fn test_matrix_mul() {
+        let u = Matrix::new(3usize, 3usize, vec![
+            1.0, 2.0, 3.0,
+            4.0, 5.0, 6.0,
+            7.0, 8.0, 9.0,
+        ]).unwrap();
+        let v = Matrix::new(3usize, 3usize, vec![
+            1.0, 2.0, 3.0,
+            4.0, 5.0, 6.0,
+            7.0, 8.0, 9.0,
+        ]).unwrap();
+        assert_eq!(u * v, Matrix::new(3usize, 3usize, vec![
+            30.0, 36.0, 42.0,
+            66.0, 81.0, 96.0,
+            102.0, 126.0, 150.0,
+        ]).unwrap());
+    }
+
+    #[test]
+    fn test_matrix_mul_scalar() {
+        let u = Matrix::new(3usize, 3usize, vec![
+            1.0, 2.0, 3.0,
+            4.0, 5.0, 6.0,
+            7.0, 8.0, 9.0,
+        ]).unwrap();
+        assert_eq!(u * 2.0, Matrix::new(3usize, 3usize, vec![
+            2.0, 4.0, 6.0,
+            8.0, 10.0, 12.0,
+            14.0, 16.0, 18.0,
+        ]).unwrap());
+    }
+
+    #[test]
+    fn test_matrix_mul_vector() {
+        let u = Matrix::new(3usize, 3usize, vec![
+            1.0, 2.0, 3.0,
+            4.0, 5.0, 6.0,
+            7.0, 8.0, 9.0,
+        ]).unwrap();
+        let v = VectorN::new(vec![1.0, 2.0, 3.0]);
+        assert_eq!(u * v, VectorN::new(vec![14.0, 32.0, 50.0]));
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_matrix_mul_vector_size_difference() {
+        let u = Matrix::new(3usize, 3usize, vec![
+            1.0, 2.0, 3.0,
+            4.0, 5.0, 6.0,
+            7.0, 8.0, 9.0,
+        ]).unwrap();
+        let v = VectorN::new(vec![1.0, 2.0]);
+        assert_eq!(u * v, VectorN::new_empty(1usize)); // Should panic!
+    }
+
+    #[test]
+    fn test_matrix_inverse() {
+        let u = Matrix::new(3usize, 3usize, vec![
+            3.0, 0.0, 2.0,
+            2.0, 0.0, -2.0,
+            0.0, 1.0, 1.0,
+        ]).unwrap();
+        let v = Matrix::new(3usize, 3usize, vec![
+            0.2, 0.2, 0.0,
+            -0.2, 0.3, 1.0,
+            0.2, -0.3, 0.0
+        ]).unwrap();
+        assert_eq!(u.inverse().unwrap(), v);
+    }
+    
+    #[test]
+    fn test_matrix_determinant() {
+        let u = Matrix::new(3usize, 3usize, vec![
+            1.0, 2.0, 3.0,
+            4.0, 5.0, 6.0,
+            7.0, 8.0, 9.0,
+        ]).unwrap();
+        assert_eq!(u.determinant().unwrap(), 0.0);
+    }
+
+    #[test]
+    fn test_matrix_adjugate() {
+        let u = Matrix::new(3usize, 3usize, vec![
+            1.0, 2.0, 3.0,
+            4.0, 5.0, 6.0,
+            7.0, 8.0, 9.0,
+        ]).unwrap();
+        let v = Matrix::new(3usize, 3usize, vec![
+            1.0, 4.0, 7.0,
+            2.0, 5.0, 8.0,
+            3.0, 6.0, 9.0,
+        ]).unwrap();
+        assert_eq!(u.adjugate().unwrap(), v);
+    }
+
+    #[test]
+    fn test_matrix_identity() {
+        let u = Matrix::identity(3usize).unwrap();
+        let v = Matrix::new(3usize, 3usize, vec![
+            1.0, 0.0, 0.0,
+            0.0, 1.0, 0.0,
+            0.0, 0.0, 1.0,
+        ]).unwrap();
+        assert_eq!(u, v);
+    }
+
+    #[test]
+    fn test_matrix_upper_triangle() {
+        let u = Matrix::new(3usize, 3usize, vec![
+            1.0, 2.0, 3.0,
+            0.0, 4.0, 5.0,
+            0.0, 0.0, 6.0,
+        ]).unwrap();
+        assert_eq!(u.triangular(), Triangular::Upper);
+    }
+
+    #[test]
+    fn test_matrix_lower_triangle() {
+        let u = Matrix::new(3usize, 3usize, vec![
+            1.0, 0.0, 0.0,
+            2.0, 4.0, 0.0,
+            3.0, 5.0, 6.0,
+        ]).unwrap();
+        assert_eq!(u.triangular(), Triangular::Lower);
+    }
+
 }
+
+// TODO - Write rotate by angle for vectors
+// TODO - Write docstrings for all functions and structs

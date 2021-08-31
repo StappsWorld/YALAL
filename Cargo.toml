@@ -1,6 +1,6 @@
 [package]
 name = "yalal"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Samuel Rembisz <sjrembisz07@gmail.com>"]
 edition = "2018"
 description = "A library of helper functions and structs for vector and matrix manipulation"

@@ -1,6 +1,8 @@
 use crate::vector::VectorN;
+use std::convert::TryInto;
+use std::error::Error;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Triangular {
     Upper,
     Lower,
@@ -15,26 +17,40 @@ pub struct Matrix {
     triangular: Triangular,
 }
 impl Matrix {
-    pub fn new_empty<T: 'static + Into<usize> + Copy>(rows_raw: T, cols_raw: T) -> Matrix {
-        let rows = rows_raw.into();
-        let cols = cols_raw.into();
-        Matrix {
+    pub fn new_empty<T: TryInto<usize>>(rows_raw: T, cols_raw: T) -> Result<Matrix, &'static str> {
+        let rows = match rows_raw.try_into() {
+            Ok(r) => r,
+            Err(_) => return Err("Failed to convert rows into usize!"),
+        };
+        let cols = match cols_raw.try_into() {
+            Ok(c) => c,
+            Err(_) => return Err("Failed to convert cols into usize!"),
+        };
+        Ok(Matrix {
             rows,
             cols,
             data: vec![0.0; rows * cols],
             triangular: Triangular::Not,
-        }
+        })
     }
 
-    pub fn new<T: 'static + Into<usize> + Copy>(
+    pub fn new<T: TryInto<usize>>(
         rows_raw: T,
         cols_raw: T,
         data: Vec<f64>,
-    ) -> Option<Matrix> {
-        let rows = rows_raw.into();
-        let cols = cols_raw.into();
+    ) -> Result<Matrix, &'static str> {
+        let rows = match rows_raw.try_into() {
+            Ok(r) => r,
+            Err(_) => return Err("Failed to convert rows into usize!"),
+        };
+        let cols = match cols_raw.try_into() {
+            Ok(r) => r,
+            Err(_) => return Err("Failed to convert cols into usize!"),
+        };
         if rows * cols != data.len() {
-            return None;
+            return Err(
+                "rows and cols are not the correct dimensions for a matrix with the provided data!",
+            );
         }
         let mut m = Matrix {
             rows,
@@ -43,16 +59,19 @@ impl Matrix {
             triangular: Triangular::Not,
         };
         m.update_triangular();
-        Some(m)
+        Ok(m)
     }
 
-    pub fn identity<T: 'static + Into<usize> + Copy>(size_raw: T) -> Matrix {
-        let size = size_raw.into();
-        let mut m = Matrix::new_empty(size, size);
+    pub fn identity<T: TryInto<usize>>(size_raw: T) -> Option<Matrix> {
+        let size = match size_raw.try_into() {
+            Ok(s) => s,
+            Err(_) => return None,
+        };
+        let mut m = Matrix::new_empty(size, size).unwrap();
         for i in 0..size {
             m.set(i, i, 1.0);
         }
-        m
+        Some(m)
     }
 
     pub fn rows(&self) -> usize {
@@ -67,36 +86,68 @@ impl Matrix {
         &self.data
     }
 
-    pub fn get<T: 'static + Into<usize> + Copy>(&self, row: T, col: T) -> Option<f64> {
-        let row = row.into();
-        let col = col.into();
-        if row >= self.rows || col >= self.cols {
-            return None;
+    pub fn get<T: TryInto<usize>>(&self, row: T, col: T) -> Result<f64, &'static str> {
+        let row = match row.try_into() {
+            Ok(r) => r,
+            Err(_) => return Err("Failed to convert row into usize!"),
+        };
+        let col = match col.try_into() {
+            Ok(r) => r,
+            Err(_) => return Err("Failed to convert col into usize!"),
+        };
+        if row >= self.rows {
+            return Err("Parameter row was greater than the amount of rows in this matrix!");
+        }
+        if col >= self.cols {
+            return Err("Parameter col was greater than the amount of cols in this matrix!");
         }
 
-        Some(self.data[row * self.cols + col])
+        Ok(self.data[row * self.cols + col])
     }
 
-    pub fn set<T: 'static + Into<usize> + Copy>(
-        &mut self,
-        row: T,
-        col: T,
-        value: f64,
-    ) -> Option<()> {
-        let row = row.into();
-        let col = col.into();
-        if row >= self.rows || col >= self.cols {
-            return None;
+    pub fn get_mut<T: TryInto<usize>>(&mut self, row: T, col: T) -> Result<&mut f64, &'static str> {
+        let row = match row.try_into() {
+            Ok(r) => r,
+            Err(_) => return Err("Failed to convert row into usize!"),
+        };
+        let col = match col.try_into() {
+            Ok(r) => r,
+            Err(_) => return Err("Failed to convert col into usize!"),
+        };
+        if row >= self.rows {
+            return Err("Parameter row was greater than the amount of rows in this matrix!");
+        }
+        if col >= self.cols {
+            return Err("Parameter col was greater than the amount of cols in this matrix!");
+        }
+
+        Ok(self.data.get_mut(row * self.cols + col).unwrap())
+    }
+
+    pub fn set<T: TryInto<usize>>(&mut self, row: T, col: T, value: f64) -> Result<(), &'static str> {
+        let row = match row.try_into() {
+            Ok(r) => r,
+            Err(_) => return Err("Failed to convert row into usize!"),
+        };
+        let col = match col.try_into() {
+            Ok(r) => r,
+            Err(_) => return Err("Failed to convert col into usize!"),
+        };
+        if row >= self.rows {
+            return Err("Parameter row was greater than the amount of rows in this matrix!");
+        }
+        if col >= self.cols {
+            return Err("Parameter col was greater than the amount of cols in this matrix!");
         }
         self.data[row * self.cols + col] = value;
-        Some(())
+        Ok(())
     }
 
     pub fn dot(&self, other: &Matrix) -> Option<Matrix> {
         if self.cols != other.rows {
             return None;
         }
-        let mut result = Matrix::new_empty(self.rows, other.cols);
+        let mut result = Matrix::new_empty(self.rows, other.cols).unwrap();
         for i in 0..self.rows {
             for j in 0..other.cols {
                 let mut sum = 0.0;
@@ -109,27 +160,34 @@ impl Matrix {
         Some(result)
     }
 
-    pub fn determinant(&self) -> f64 {
+    /// Calculates the determinant of this matrix.
+    pub fn determinant(&self) -> Option<f64> {
         if self.rows != self.cols {
-            return 0.0;
+            return None;
         }
         if self.rows == 1 {
-            return self.data[0];
+            return Some(self.data[0]);
         }
         if self.rows == 2 {
-            return self.data[0] * self.data[3] - self.data[1] * self.data[2];
+            return Some(self.data[0] * self.data[3] - self.data[1] * self.data[2]);
         }
         let mut sum = 0.0;
         for i in 0..self.cols {
-            sum += self.data[i] * self.cofactor(0, i);
+            sum += self.get(0, i).unwrap()
+                * self.minor(0, i).unwrap()
+                * if i % 2 == 0 { 1.0 } else { -1.0 };
         }
-        sum
+        Some(sum)
     }
 
-    pub fn cofactor(&self, row: usize, col: usize) -> f64 {
-        let mut m = Matrix::new_empty(self.rows - 1, self.cols - 1);
-        let mut i = 0;
-        let mut j = 0;
+    /// Produces the minor, or the determinant of the submatrix denoted by removing row and col from this matrix.
+    pub fn minor(&self, row: usize, col: usize) -> Option<f64> {
+        if self.rows != self.cols {
+            return None;
+        }
+        let mut m = Matrix::new_empty(self.rows - 1, self.cols - 1).unwrap();
+        let mut i: usize = 0;
+        let mut j: usize = 0;
         for r in 0..self.rows {
             if r == row {
                 continue;
@@ -138,13 +196,81 @@ impl Matrix {
                 if c == col {
                     continue;
                 }
-                m.data[i * (m.cols - 1) + j] = self.data[r * self.cols + c];
+                m.set(i, j, self.get(r, c).unwrap()).unwrap();
                 j += 1;
             }
             i += 1;
             j = 0;
         }
-        m.determinant() * (if (row + col) % 2 == 0 { 1.0 } else { -1.0 })
+        m.determinant()
+    }
+
+    /// Produces a matrix of "minors," which are the determinants of all the possible matrices with one row and one column removed inside this matrix.
+    pub fn minors(&self) -> Option<Matrix> {
+        if self.rows != self.cols {
+            return None;
+        }
+        let mut m = Matrix::new_empty(self.rows, self.cols).unwrap();
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                m.set(i, j, self.minor(i, j).unwrap());
+            }
+        }
+        Some(m)
+    }
+
+    /// Swaps all elements over the diagonal
+    pub fn adjugate(&self) -> Option<Matrix> {
+        if self.rows != self.cols {
+            return None;
+        }
+        let mut m = Matrix::new_empty(self.rows, self.cols).unwrap();
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                if i == j {
+                    m.set(i, j, self.get(i, j).unwrap()).unwrap();
+                } else {
+                    m.set(i, j, self.get(j, i).unwrap()).unwrap();
+                }
+            }
+        }
+        Some(m)
+    }
+
+    pub fn cofactor(&self) -> Option<Matrix> {
+        if self.rows != self.cols {
+            return None;
+        }
+        let mut m = Matrix::new_empty(self.rows, self.cols).unwrap();
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                m.set(i, j, self.cofactor_val(i, j).unwrap()).unwrap();
+            }
+        }
+        Some(m)
+    }
+
+    pub fn cofactor_val(&self, row: usize, col: usize) -> Option<f64> {
+        if row >= self.rows || col >= self.cols {
+            return None;
+        }
+        let val = self.get(row, col).unwrap() * if (row + col) % 2 == 0 { 1.0 } else { -1.0 };
+        Some(val)
+    }
+
+    pub fn inverse(&self) -> Option<Matrix> {
+        // See https://www.mathsisfun.com/algebra/matrix-inverse-minors-cofactors-adjugate.html for algorithm
+        if self.rows != self.cols {
+            return None;
+        }
+        let mom = self.minors().unwrap();
+        let moc = mom.cofactor().unwrap();
+        let adc = moc.adjugate().unwrap();
+        let det = self.determinant().unwrap();
+        if det == 0.0 {
+            return None;
+        }
+        Some(adc / det)
     }
 
     pub fn eigenvalues_eigenvectors(&self) -> Option<Vec<(VectorN, f64)>> {
@@ -155,11 +281,13 @@ impl Matrix {
         match self.rows {
             2 => {
                 let trace = self.trace().unwrap();
-                let val_pos = (trace + ((trace * trace) - (4.0 * self.determinant())).sqrt()) / 2.0;
-                let val_neg = (trace - ((trace * trace) - (4.0 * self.determinant())).sqrt()) / 2.0;
+                let val_pos =
+                    (trace + ((trace * trace) - (4.0 * self.determinant().unwrap())).sqrt()) / 2.0;
+                let val_neg =
+                    (trace - ((trace * trace) - (4.0 * self.determinant().unwrap())).sqrt()) / 2.0;
 
-                let vec_pos = self.clone() - Matrix::identity(self.rows) * val_pos;
-                let vec_neg = self.clone() - Matrix::identity(self.rows) * val_neg;
+                let vec_pos = self.clone() - Matrix::identity(self.rows).unwrap() * val_pos;
+                let vec_neg = self.clone() - Matrix::identity(self.rows).unwrap() * val_neg;
                 Some(vec![
                     (vec_pos.get_column(0).unwrap(), val_pos),
                     (vec_neg.get_column(1).unwrap(), val_neg),
@@ -176,29 +304,30 @@ impl Matrix {
             return;
         }
 
-        let mut is_upper = true;
-        let mut is_lower = true;
+        let mut upper  = vec![];
+        let mut lower  = vec![];
+        let mut diagonal = vec![];
         for i in 0..self.rows {
             for j in 0..self.cols {
-                if is_upper && i > j && self.get(i, j).unwrap() != 0.0 {
-                    is_upper = false;
-                }
-                if is_lower && i < j && self.get(i, j).unwrap() != 0.0 {
-                    is_lower = false;
+                if i == j {
+                    diagonal.push(self.get(i, j).unwrap());
+                } else if i < j {
+                    upper.push(self.get(i, j).unwrap());
+                } else {
+                    lower.push(self.get(i, j).unwrap());
                 }
             }
         }
 
-        if is_upper && is_lower {
-            panic!("Matrix is both an upper and lower triangular matrix... Please take a look and submit a bug report...\n{}", self);
-        }
+        let not_diagonal = diagonal.contains(&0.0);
+        let not_upper = upper.contains(&0.0);
+        let not_lower = lower.contains(&0.0);
 
-        self.triangular = if is_upper {
-            Triangular::Upper
-        } else if is_lower {
-            Triangular::Lower
-        } else {
-            Triangular::Not
+
+        self.triangular = match (not_diagonal, not_upper, not_lower) {
+            (false, false, true) => Triangular::Upper,
+            (false, true, false) => Triangular::Lower,
+            _ => Triangular::Not,
         };
     }
 
@@ -277,17 +406,28 @@ impl std::ops::Mul<Matrix> for Matrix {
             panic!("Matrices have different dimensions");
         }
 
-        let mut result = Matrix::new_empty(self.rows, rhs.cols);
+        let mut result = Matrix::new_empty(self.rows, rhs.cols).unwrap();
         for i in 0..self.rows {
             for j in 0..rhs.cols {
                 let mut sum = 0.0;
                 for k in 0..self.cols {
                     sum += self.get(i, k).unwrap() * rhs.get(k, j).unwrap();
                 }
-                result.set(i, j, sum);
+                result.set(i, j, sum).unwrap();
             }
         }
         result
+    }
+}
+impl std::ops::Div<f64> for Matrix {
+    type Output = Matrix;
+    fn div(self, rhs: f64) -> Matrix {
+        self * (1.0 / rhs)
+    }
+}
+impl std::ops::DivAssign<f64> for Matrix {
+    fn div_assign(&mut self, rhs: f64) {
+        *self = self.clone() / rhs;
     }
 }
 impl std::ops::Add<Matrix> for Matrix {
@@ -336,6 +476,17 @@ impl std::ops::Neg for Matrix {
     type Output = Matrix;
     fn neg(self) -> Matrix {
         self * -1.0
+    }
+}
+impl std::cmp::PartialEq for Matrix {
+    fn eq(&self, other: &Matrix) -> bool {
+        if self.rows != other.rows || self.cols != other.cols {
+            return false;
+        }
+        self.data
+            .iter()
+            .zip(other.data.iter())
+            .all(|(x, y)| (x - y).abs() < 1e-10)
     }
 }
 impl std::fmt::Display for Matrix {

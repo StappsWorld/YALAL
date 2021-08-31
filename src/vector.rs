@@ -1,3 +1,5 @@
+use crate::line::Line;
+
 #[derive(Debug, Clone, Copy, PartialOrd, Default)]
 pub struct Vector {
     x: f64,
@@ -577,6 +579,12 @@ impl VectorN {
 
     pub fn size(&self) -> usize {
         self.data.len()
+    }
+
+    pub fn resize(&mut self, size: usize) {
+        self.data.resize(size, 0.0);
+        self.update_angles();
+        self.update_mag();
     }
 
     pub fn get_component(&self, index: usize) -> Option<f64> {

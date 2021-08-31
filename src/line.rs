@@ -9,6 +9,13 @@ pub struct Line {
 }
 impl Line {
     pub fn new(p1: VectorN, p2: VectorN) -> Line {
+        let mut p1 = p1;
+        let mut p2 = p2;
+        if p1.size() != p2.size() {
+            let largest = std::cmp::max(p1.size(), p2.size());
+            p1.resize(largest);
+            p2.resize(largest);
+        }
         let mut l = Line {
             p1,
             p2,
