@@ -6,6 +6,17 @@ pub struct Vector {
     mag: f64,
 }
 impl Vector {
+
+    /// Creates a new Vector
+    /// # Arguments
+    /// * 'raw_x' - The x component of this Vector
+    /// * 'raw_y' - The y component of this Vector
+    ///
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector;
+    /// let v = Vector::new(2, 2);
+    /// ```
     pub fn new<T: 'static + Into<f64> + Copy>(raw_x: T, raw_y: T) -> Vector {
         let x: f64 = raw_x.into();
         let y: f64 = raw_y.into();
@@ -17,10 +28,26 @@ impl Vector {
         }
     }
 
+    /// Creates a standard unit Vector with an x and y component of 1
+    ///
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector;
+    /// let v = Vector::standard_unit();
+    /// ```
     pub fn standard_unit() -> Vector {
         Vector::new(1, 1)
     }
 
+    /// Creates a unit vector with the heading of the angle provided
+    /// # Arguments
+    /// * 'raw_heading' - The heading of this unit vector provided in **degrees**
+    ///
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector;
+    /// let v = Vector::from_angle(90);
+    /// ```
     pub fn from_angle<T: 'static + Into<f64> + Copy>(raw_heading: T) -> Vector {
         let heading_deg: f64 = raw_heading.into();
         let mut v = Vector::default();
@@ -29,6 +56,13 @@ impl Vector {
         v
     }
 
+    /// Creates a vector with a random x and y component, both ranging from -1.0 to 1.0
+    ///
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector;
+    /// let v = Vector::random();
+    /// ```
     pub fn random() -> Vector {
         let mut rng = rand::thread_rng();
 
@@ -37,38 +71,105 @@ impl Vector {
         Vector::new(x, y)
     }
 
+    /// Copies this vector's x and y component into a tuple.
+    ///
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector;
+    /// let v = Vector::new(5, 10);
+    /// let (x, y) = v.x_y();
+    /// println!("This vector has the coordinates ({}, {})!", x, y); // Should print '... coordinates (5, 10)!'
+    /// ```
     pub fn x_y(&self) -> (f64, f64) {
         (self.x, self.y)
     }
 
+    /// Sets this vector's x component to the argument 'raw_x'
+    ///
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector;
+    /// let mut v = Vector::new(5, 10);
+    /// println!("Our vector is {}", v); // Should print '... <5, 10>'
+    /// v.set_x(12.0);
+    /// println!("Our vector is now {}", v); // Should print '... <12, 10>'
+    /// ```
     pub fn set_x<T: 'static + Into<f64> + Copy + std::convert::From<f64>>(&mut self, raw_x: T) {
         let y = self.y;
         *self = Vector::new(raw_x, y.into());
     }
 
+    /// Sets this vector's y component to the argument 'raw_y'
+    ///
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector;
+    /// let mut v = Vector::new(5, 10);
+    /// println!("Our vector is {}", v); // Should print '... <5.0, 10.0>'
+    /// v.set_y(12.0);
+    /// println!("Our vector is now {}", v); // Should print '... <5.0, 12.0>'
+    /// ```
     pub fn set_y<T: 'static + Into<f64> + Copy + std::convert::From<f64>>(&mut self, raw_y: T) {
         let x = self.x;
         *self = Vector::new(x, raw_y.into());
     }
 
-    // A function that normalizes this vector.
+    /// Internally normalizes this vector.
+    /// **Warning**: This will overwrite the internal components of this vector. If you want a normalized version of this vector without losing this vector, call `get_normalized()`
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector;
+    /// let mut v = Vector::new(3, 4);
+    /// println!("Our vector is {}", v); // Should print '... <3.0, 4.0>'
+    /// v.normalize();
+    /// println!("Out vector is now {}", v); // Should print '... <0.6, 0.8>'
+    /// ```
     pub fn normalize(&mut self) {
         self.x /= self.mag;
         self.y /= self.mag;
         self.mag = 1.0;
     }
 
+    /// Generates a normalized version of this vector.
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector;
+    /// let v = Vector::new(3, 4);
+    /// println!("The normalized version of v is {}", v.get_normalized()); // Should print '... <0.6, 0.8>'
+    /// println!("v is still {}", v); // Should print '... <3.0, 4.0>'
+    /// ```
     pub fn get_normalized(&self) -> Vector {
         let mut v = self.clone();
         v.normalize();
         v
     }
 
-    // A function that finds the distance between this vector and another.
+    /// Calculates the distance between this vector and another
+    /// # Arguments
+    /// * 'other' - The other vector to be measured
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector;
+    /// let u = Vector::new(5, 5);
+    /// let v = Vector::new(2, 1);
+    /// println!("The distance between u and v is {}", u.distance(v)); // Should print '... 5.0'
+    /// ```
     pub fn distance(self, other: Vector) -> f64 {
         (self - other).mag
     }
 
+    /// Sets the magnitude of this vector and updates the x and y components.
+    /// **Warning**: This will overwrite the internal components of this vector!
+    /// # Arguments
+    /// * 'mag' - The magnitude to set this vector to
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector;
+    /// let mut v = Vector::new(3.0 / 5.0, 4.0 / 5.0);
+    /// println!("Our vector is {}", v); // Should print '... <0.6, 0.8>
+    /// v.set_mag(5.0);
+    /// println!("Our vector is now {}", v); // Should print '... <3.0, 4.0>'
+    /// ```
     pub fn set_mag(&mut self, mag: f64) {
         self.normalize();
         self.x *= mag;
@@ -76,7 +177,13 @@ impl Vector {
         self.mag = mag;
     }
 
-    // A function that calculates the magnitude of this vector.
+    /// Returns the magnitude of this function
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector;
+    /// let v = Vector::new(3.0, 4.0);
+    /// println!("The magnitude of v is {}", v.mag()); // Should print '... 5.0'
+    /// ```
     pub fn mag(&self) -> f64 {
         self.mag
     }
@@ -85,10 +192,28 @@ impl Vector {
         self.mag = (self.x * self.x + self.y * self.y).sqrt();
     }
 
+    /// Returns the heading of the vector in **degrees**
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector;
+    /// let v = Vector::new(0.0, 1.0);
+    /// println!("The heading of this vector is {} degrees!", v.heading()); // Should print '... 90.0 degrees!'
+    /// ```
     pub fn heading(&self) -> f64 {
         self.heading
     }
 
+    /// Sets this vectors heading to the angle provided and updates its x and y components
+    /// # Arguments
+    /// * 'heading' - The angle that this vector will be set to
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector;
+    /// let mut v = Vector::new(1.0, 0.0);
+    /// println!("Our vector {} has an angle of {}", v, v.heading()); // Should print '... <1.0, 0.0> ... 0.0'
+    /// v.set_heading(90.0);
+    /// println!("Our vector is now {} and has an angle of {}", v, v.heading()); // Should print '... <0.0, 1.0> ... 90.0'
+    /// ```
     pub fn set_heading(&mut self, heading: f64) {
         let radians = heading.to_radians();
 

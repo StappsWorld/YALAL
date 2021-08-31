@@ -455,5 +455,4 @@ mod tests {
 
 }
 
-// TODO - Write rotate by angle for vectors
 // TODO - Write docstrings for all functions and structs
