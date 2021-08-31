@@ -27,16 +27,16 @@
 //! ```
 //! use yalal::matrix::Matrix;
 //!
-//! let m = Matrix::new(2usize, 2usize, vec![1.0, 2.0,
-//!                                      3.0, 4.0]).unwrap();
-//! let n = Matrix::new(2usize, 2usize, vec![5.0, 6.0, 
-//!                                      7.0, 8.0]).unwrap();
+//! let m = Matrix::new(2, 2, vec![1.0, 2.0,
+//!                                3.0, 4.0]).unwrap();
+//! let n = Matrix::new(2, 2, vec![5.0, 6.0, 
+//!                                7.0, 8.0]).unwrap();
 //!
 //! println!("{}", m); // should output [1.0, 2.0]
 //!                    //               [3.0, 4.0]
 //! println!("{}", m.rows()); // should output 2
 //! println!("{}", m.cols()); // should output 2
-//! println!("{}", m.get(0u16, 0u16).unwrap()); // should output 1.0
+//! println!("{}", m.get(0, 0).unwrap()); // should output 1.0
 //! println!("{}", m.dot(&n).unwrap()); // should output [19.0, 22.0]
 //! ```
 
