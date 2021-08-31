@@ -152,7 +152,7 @@ impl Matrix {
             for j in 0..other.cols {
                 let mut sum = 0.0;
                 for k in 0..self.cols {
-                    sum += self.get(i, k).unwrap_or(0.0) * other.get(j, k).unwrap_or(0.0);
+                    sum += self.get(i, k).unwrap() * other.get(k, j).unwrap();
                 }
                 result.set(i, j, sum);
             }

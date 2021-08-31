@@ -27,8 +27,10 @@
 //! ```
 //! use yalal::matrix::Matrix;
 //!
-//! let m = Matrix::new(2u16, 2u16, vec![1.0, 2.0, 3.0, 4.0]).unwrap();
-//! let n = Matrix::new(2u16, 2u16, vec![5.0, 6.0, 7.0, 8.0]).unwrap();
+//! let m = Matrix::new(2usize, 2usize, vec![1.0, 2.0,
+//!                                      3.0, 4.0]).unwrap();
+//! let n = Matrix::new(2usize, 2usize, vec![5.0, 6.0, 
+//!                                      7.0, 8.0]).unwrap();
 //!
 //! println!("{}", m); // should output [1.0, 2.0]
 //!                    //               [3.0, 4.0]
@@ -347,16 +349,6 @@ mod tests {
         ]).unwrap();
         assert_eq!(u.inverse().unwrap(), v);
     }
-    
-    #[test]
-    fn test_matrix_determinant() {
-        let u = Matrix::new(3usize, 3usize, vec![
-            1.0, 2.0, 3.0,
-            4.0, 5.0, 6.0,
-            7.0, 8.0, 9.0,
-        ]).unwrap();
-        assert_eq!(u.determinant().unwrap(), 0.0);
-    }
 
     #[test]
     fn test_matrix_adjugate() {
@@ -402,6 +394,63 @@ mod tests {
             3.0, 5.0, 6.0,
         ]).unwrap();
         assert_eq!(u.triangular(), Triangular::Lower);
+    }
+
+    fn test_matrix_get_index() {
+        let m = Matrix::new(2usize, 3usize, vec![
+            1.0, 2.0, 3.0,
+            4.0, 5.0, 6.0
+        ]).unwrap();
+        assert_eq!(m.get(0usize,0usize).unwrap(), 1.0);
+        assert_eq!(m.get(0usize,1usize).unwrap(), 2.0);
+        assert_eq!(m.get(0usize,2usize).unwrap(), 3.0);
+        assert_eq!(m.get(1usize,0usize).unwrap(), 4.0);
+        assert_eq!(m.get(1usize,1usize).unwrap(), 5.0);
+        assert_eq!(m.get(1usize,2usize).unwrap(), 6.0);
+    }
+
+    #[test]
+    fn test_matrix_dot() {
+        let m1 = Matrix::new(2usize, 3usize, vec![
+            1.0, 2.0, 3.0,
+            4.0, 5.0, 6.0
+        ]).unwrap();
+        let m2 = Matrix::new(3usize, 2usize, vec![
+            1.0, 2.0,
+            3.0, 4.0,
+            5.0, 6.0
+        ]).unwrap();
+        let result1 = Matrix::new(2usize, 2usize, vec![
+            22.0, 28.0,
+            49.0, 64.0
+        ]).unwrap();
+
+        let m3 = Matrix::new(2usize, 2usize, vec![
+            1.0, 2.0,
+            3.0, 4.0
+        ]).unwrap();
+        let result2 = Matrix::new(2usize, 2usize, vec![
+            7.0, 10.0,
+            15.0, 22.0
+        ]).unwrap();
+        assert_eq!(m1.dot(&m2).unwrap(), result1);
+        assert_eq!(m3.dot(&m3).unwrap(), result2);
+    }
+
+    #[test]
+    fn test_matrix_determinant() {
+        // TODO - Fix determinant algorithm
+        let m1 = Matrix::new(2usize, 2usize, vec![
+            4.0, 6.0,
+            3.0, 8.0
+        ]).unwrap();
+        let m2 = Matrix::new(3usize, 3usize, vec![
+            6.0, 1.0, 1.0,
+            4.0, -2.0, 5.0,
+            2.0, 8.0, 7.0
+        ]).unwrap();
+        assert_eq!(m1.determinant().unwrap(), 14.0);
+        assert_eq!(m2.determinant().unwrap(), -306.0);
     }
 
 }
