@@ -1,5 +1,3 @@
-use crate::line::Line;
-
 #[derive(Debug, Clone, Copy, PartialOrd, Default)]
 pub struct Vector {
     x: f64,

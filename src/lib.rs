@@ -396,6 +396,7 @@ mod tests {
         assert_eq!(u.triangular(), Triangular::Lower);
     }
 
+    #[test]
     fn test_matrix_get_index() {
         let m = Matrix::new(2usize, 3usize, vec![
             1.0, 2.0, 3.0,
@@ -439,7 +440,6 @@ mod tests {
 
     #[test]
     fn test_matrix_determinant() {
-        // TODO - Fix determinant algorithm
         let m1 = Matrix::new(2usize, 2usize, vec![
             4.0, 6.0,
             3.0, 8.0

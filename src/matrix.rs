@@ -1,6 +1,5 @@
 use crate::vector::VectorN;
 use std::convert::TryInto;
-use std::error::Error;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Triangular {
@@ -69,7 +68,7 @@ impl Matrix {
         };
         let mut m = Matrix::new_empty(size, size).unwrap();
         for i in 0..size {
-            m.set(i, i, 1.0);
+            m.set(i, i, 1.0).unwrap();
         }
         Some(m)
     }
@@ -154,7 +153,7 @@ impl Matrix {
                 for k in 0..self.cols {
                     sum += self.get(i, k).unwrap() * other.get(k, j).unwrap();
                 }
-                result.set(i, j, sum);
+                result.set(i, j, sum).unwrap();
             }
         }
         Some(result)
@@ -213,7 +212,7 @@ impl Matrix {
         let mut m = Matrix::new_empty(self.rows, self.cols).unwrap();
         for i in 0..self.rows {
             for j in 0..self.cols {
-                m.set(i, j, self.minor(i, j).unwrap());
+                m.set(i, j, self.minor(i, j).unwrap()).unwrap();
             }
         }
         Some(m)
