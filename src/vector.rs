@@ -229,9 +229,24 @@ impl Vector {
             y = y.floor();
         }
 
-        self.x = x;
-        self.y = y;
+        self.x = x * self.mag;
+        self.y = y * self.mag;
         self.heading = heading;
+    }
+
+    /// Adds to this vectors current heading by the angle provided
+    /// # Arguments
+    /// * 'heading' - The angle to add to this vector's heading
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector;
+    /// let mut v = Vector::new(1.0, 0.0);
+    /// println!("Our vector {} has an angle of {}", v, v.heading()); // Should print '... <1.0, 0.0> ... 0.0'
+    /// v.add_heading(90.0);
+    /// println!("Our vector is now {} and has an angle of {}", v, v.heading()); // Should print '... <0.0, 1.0> ... 90.0'
+    /// ```
+    pub fn rotate(&mut self, angle : f64) {
+        self.set_heading(self.heading() + angle);
     }
 
     pub fn limit_mag(&mut self, max: f64) {
