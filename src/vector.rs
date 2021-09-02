@@ -229,8 +229,8 @@ impl Vector {
             y = y.floor();
         }
 
-        self.x = x * self.mag;
-        self.y = y * self.mag;
+        self.x = x * if self.mag > 0.0 { self.mag } else { 1.0 };
+        self.y = y * if self.mag > 0.0 { self.mag } else { 1.0 };
         self.heading = heading;
     }
 
@@ -242,7 +242,7 @@ impl Vector {
     /// use yalal::vector::Vector;
     /// let mut v = Vector::new(1.0, 0.0);
     /// println!("Our vector {} has an angle of {}", v, v.heading()); // Should print '... <1.0, 0.0> ... 0.0'
-    /// v.add_heading(90.0);
+    /// v.rotate(90.0);
     /// println!("Our vector is now {} and has an angle of {}", v, v.heading()); // Should print '... <0.0, 1.0> ... 90.0'
     /// ```
     pub fn rotate(&mut self, angle : f64) {

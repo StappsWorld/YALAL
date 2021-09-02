@@ -397,6 +397,16 @@ mod tests {
     }
 
     #[test]
+    fn test_matrix_not_triangular() {
+        let u = Matrix::new(3usize, 3usize, vec![
+            1.0, 2.0, 3.0,
+            0.0, 0.0, 5.0,
+            0.0, 0.0, 6.0,
+        ]).unwrap();
+        assert_eq!(u.triangular(), Triangular::Not);
+    }
+
+    #[test]
     fn test_matrix_get_index() {
         let m = Matrix::new(2usize, 3usize, vec![
             1.0, 2.0, 3.0,
