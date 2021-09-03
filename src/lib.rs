@@ -367,7 +367,7 @@ mod tests {
 
     #[test]
     fn test_matrix_identity() {
-        let u = Matrix::identity(3usize).unwrap();
+        let u = Matrix::identity(3usize);
         let v = Matrix::new(3usize, 3usize, vec![
             1.0, 0.0, 0.0,
             0.0, 1.0, 0.0,
@@ -466,3 +466,5 @@ mod tests {
 }
 
 // TODO - Write docstrings for all functions and structs
+// TODO - Crate feature for rand
+// TODO - Switch to assert_eq! macro for docstrings instead of println!

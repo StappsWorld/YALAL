@@ -11,3 +11,4 @@ license = "MIT"
 
 [dependencies]
 rand = "0.8.4"
+num-traits = "0.2.14"

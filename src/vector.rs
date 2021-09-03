@@ -1,3 +1,5 @@
+use num_traits::cast::AsPrimitive;
+
 #[derive(Debug, Clone, Copy, PartialOrd, Default)]
 pub struct Vector {
     x: f64,
@@ -6,20 +8,19 @@ pub struct Vector {
     mag: f64,
 }
 impl Vector {
-
     /// Creates a new Vector
     /// # Arguments
-    /// * 'raw_x' - The x component of this Vector
-    /// * 'raw_y' - The y component of this Vector
+    /// * 'x' - The x component of this Vector
+    /// * 'y' - The y component of this Vector
     ///
     /// # Example
     /// ```
     /// use yalal::vector::Vector;
     /// let v = Vector::new(2, 2);
     /// ```
-    pub fn new<T: 'static + Into<f64> + Copy>(raw_x: T, raw_y: T) -> Vector {
-        let x: f64 = raw_x.into();
-        let y: f64 = raw_y.into();
+    pub fn new<T: AsPrimitive<f64>>(x: T, y: T) -> Vector {
+        let x: f64 = x.as_();
+        let y: f64 = y.as_();
         Vector {
             x: x,
             y: y,
@@ -34,6 +35,7 @@ impl Vector {
     /// ```
     /// use yalal::vector::Vector;
     /// let v = Vector::standard_unit();
+    /// assert_eq(v, Vector::new(1, 1));
     /// ```
     pub fn standard_unit() -> Vector {
         Vector::new(1, 1)
@@ -41,15 +43,15 @@ impl Vector {
 
     /// Creates a unit vector with the heading of the angle provided
     /// # Arguments
-    /// * 'raw_heading' - The heading of this unit vector provided in **degrees**
+    /// * 'heading' - The heading of this unit vector provided in **degrees**
     ///
     /// # Example
     /// ```
     /// use yalal::vector::Vector;
     /// let v = Vector::from_angle(90);
     /// ```
-    pub fn from_angle<T: 'static + Into<f64> + Copy>(raw_heading: T) -> Vector {
-        let heading_deg: f64 = raw_heading.into();
+    pub fn from_angle<T: AsPrimitive<f64>>(heading: T) -> Vector {
+        let heading_deg: f64 = heading.as_();
         let mut v = Vector::default();
         v.set_heading(heading_deg);
         v.update_mag();
@@ -84,7 +86,7 @@ impl Vector {
         (self.x, self.y)
     }
 
-    /// Sets this vector's x component to the argument 'raw_x'
+    /// Sets this vector's x component to the argument 'x'
     ///
     /// # Example
     /// ```
@@ -94,12 +96,13 @@ impl Vector {
     /// v.set_x(12.0);
     /// println!("Our vector is now {}", v); // Should print '... <12, 10>'
     /// ```
-    pub fn set_x<T: 'static + Into<f64> + Copy + std::convert::From<f64>>(&mut self, raw_x: T) {
-        let y = self.y;
-        *self = Vector::new(raw_x, y.into());
+    pub fn set_x<T: AsPrimitive<f64>>(&mut self, x: T) {
+        *self = Vector::new(x.as_(), self.y);
     }
 
-    /// Sets this vector's y component to the argument 'raw_y'
+    /// Sets this vector's y component to the argument 'y'
+    /// # Arguments
+    /// * 'y' - The y component of this Vector to be set
     ///
     /// # Example
     /// ```
@@ -109,9 +112,8 @@ impl Vector {
     /// v.set_y(12.0);
     /// println!("Our vector is now {}", v); // Should print '... <5.0, 12.0>'
     /// ```
-    pub fn set_y<T: 'static + Into<f64> + Copy + std::convert::From<f64>>(&mut self, raw_y: T) {
-        let x = self.x;
-        *self = Vector::new(x, raw_y.into());
+    pub fn set_y<T: AsPrimitive<f64>>(&mut self, y: T) {
+        *self = Vector::new(self.x, y.as_());
     }
 
     /// Internally normalizes this vector.
@@ -245,7 +247,7 @@ impl Vector {
     /// v.rotate(90.0);
     /// println!("Our vector is now {} and has an angle of {}", v, v.heading()); // Should print '... <0.0, 1.0> ... 90.0'
     /// ```
-    pub fn rotate(&mut self, angle : f64) {
+    pub fn rotate(&mut self, angle: f64) {
         self.set_heading(self.heading() + angle);
     }
 
@@ -416,38 +418,65 @@ pub struct Vector3d {
     mag: f64,
 }
 impl Vector3d {
-    pub fn new<T: 'static + Into<f64> + Copy>(x_raw: T, y_raw: T, z_raw: T) -> Vector3d {
-        let x: f64 = x_raw.into();
-        let y: f64 = y_raw.into();
-        let z: f64 = z_raw.into();
+    /// Creates a new Vector3d
+    /// # Arguments
+    /// * 'x' - The x component of this Vector
+    /// * 'y' - The y component of this Vector
+    /// * 'z' - The z component of this Vector
+    ///
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector3d;
+    /// let v = Vector::new(2, 2, 2);
+    /// ```
+    pub fn new<T: AsPrimitive<f64>>(x: T, y: T, z: T) -> Vector3d {
+        let x: f64 = x.as_();
+        let y: f64 = y.as_();
+        let z: f64 = z.as_();
         let mag = (x * x + y * y + z * z).sqrt();
         Vector3d {
             x: x,
             y: y,
             z: z,
-            heading: (1.0 / (y / x).tan(), 1.0 / (z / mag).cos()),
+            heading: ((y / x).atan(), (z / mag).acos()),
             mag: mag,
         }
     }
 
-    // This function generates a Vector3d from a theta (angle from x axis to [v.x, v.y]) and phi (angle from y axis [v.y, v.z]) in degrees.
-    pub fn from_heading<T: 'static + Into<f64> + Copy + std::convert::From<f64>>(
-        theta_raw: T,
-        phi_raw: T,
-    ) -> Vector3d {
-        let theta_deg: f64 = theta_raw.into();
+    /// Generates a Vector3d from a theta and phi in degrees. 
+    /// See [this](https://en.wikipedia.org/wiki/Spherical_coordinate_system#Cartesian_coordinates) for more information.
+    /// # Arguments
+    /// * 'x' - The x component of this Vector
+    /// * 'y' - The y component of this Vector
+    /// * 'z' - The z component of this Vector
+    ///
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector3d;
+    /// let v = Vector3d::from_heading(90, 45);
+    /// ```
+    pub fn from_heading<T: AsPrimitive<f64>>(theta: T, phi: T) -> Vector3d {
+        let theta_deg: f64 = theta.as_();
         let theta: f64 = theta_deg.to_radians();
-        let phi_deg: f64 = phi_raw.into();
+        let phi_deg: f64 = phi.as_();
         let phi: f64 = phi_deg.to_radians();
+        let (x, y, z) = (theta.cos() * phi.sin(), theta.sin() * phi.sin(), phi.cos());
         Vector3d {
-            x: theta.cos(),
-            y: theta.sin(),
-            z: phi.cos(),
+            x,
+            y,
+            z,
             heading: (theta, phi),
             mag: 1.0,
         }
     }
 
+    /// Generates a random Vector3d with all coordinates ranging from -1.0 to 1.0
+    ///
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector3d;
+    /// let v = Vector3d::random();
+    /// ```
     pub fn random() -> Vector3d {
         let mut rng = rand::thread_rng();
 
@@ -457,31 +486,75 @@ impl Vector3d {
         Vector3d::new(x, y, z)
     }
 
+    /// Returns this Vectors x, y, and z components in a tuple of f64s
+    ///
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector3d;
+    /// let v = Vector3d::new(1, 2, 3);
+    /// let (x, y, z) = v.x_y_z();
+    /// ```
     pub fn x_y_z(&self) -> (f64, f64, f64) {
         (self.x, self.y, self.z)
     }
 
-    pub fn set_x<T: 'static + Into<f64> + Copy + std::convert::From<f64>>(&mut self, x_raw: T) {
-        let x: f64 = x_raw.into();
+    /// Sets this vector's x component to the argument 'x'
+    ///
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector3d;
+    /// let mut v = Vector3d::new(5, 10, 15);
+    /// v.set_x(12.0);
+    /// assert_eq!(v, Vector3d::new(12, 10, 15));
+    /// ```
+    pub fn set_x<T: AsPrimitive<f64>>(&mut self, x: T) {
+        let x: f64 = x.as_();
         *self = Vector3d::new(x, self.y, self.z);
     }
 
-    pub fn set_y<T: 'static + Into<f64> + Copy + std::convert::From<f64>>(&mut self, y_raw: T) {
-        let y: f64 = y_raw.into();
+    /// Sets this vector's y component to the argument 'y'
+    ///
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector3d;
+    /// let mut v = Vector3d::new(5, 10, 15);
+    /// v.set_y(12.0);
+    /// assert_eq!(v, Vector3d::new(5, 12, 15));
+    /// ```
+    pub fn set_y<T: AsPrimitive<f64>>(&mut self, y: T) {
+        let y: f64 = y.as_();
         *self = Vector3d::new(self.x, y, self.z);
     }
 
-    pub fn set_z<T: 'static + Into<f64> + Copy + std::convert::From<f64>>(&mut self, z_raw: T) {
-        let z: f64 = z_raw.into();
+    /// Sets this vector's z component to the argument 'z'
+    ///
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector3d;
+    /// let mut v = Vector3d::new(5, 10, 15);
+    /// v.set_z(12.0);
+    /// assert_eq!(v, Vector3d::new(5, 10, 12));
+    /// ```
+    pub fn set_z<T: AsPrimitive<f64>>(&mut self, z: T) {
+        let z: f64 = z.as_();
         *self = Vector3d::new(self.x, self.y, z);
     }
 
-    // This function sets theta (angle from x axis to [v.x, v.y]) in degrees.
-    pub fn set_theta<T: 'static + Into<f64> + Copy + std::convert::From<f64>>(
+    /// Sets this vector's theta
+    ///
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector3d;
+    /// let mut v = Vector3d::new(3, 4, 1);
+    /// v.set_theta(90);
+    // TODO - Fix this
+    /// assert_eq!(v, Vector3d::new(0, 5, 1));
+    /// ```
+    pub fn set_theta<T: AsPrimitive<f64>>(
         &mut self,
-        theta_raw: T,
+        theta: T,
     ) {
-        self.set_heading(theta_raw, self.heading.1.into());
+        self.set_heading(theta.as_(), self.heading.1);
     }
 
     // This function sets phi (angle from y axis [v.y, v.z]) in degrees.
@@ -490,12 +563,8 @@ impl Vector3d {
     }
 
     // This function sets the heading in (theta, phi) format in degrees.
-    pub fn set_heading<T: 'static + Into<f64> + Copy + std::convert::From<f64>>(
-        &mut self,
-        theta_raw: T,
-        phi_raw: T,
-    ) {
-        *self = Vector3d::from_heading(theta_raw, phi_raw) * self.mag;
+    pub fn set_heading<T: AsPrimitive<f64>>(&mut self, theta: T, phi: T) {
+        *self = Vector3d::from_heading(theta, phi) * self.mag;
     }
 
     // A function that normalizes this vector.
