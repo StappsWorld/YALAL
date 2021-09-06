@@ -468,3 +468,4 @@ mod tests {
 // TODO - Write docstrings for all functions and structs
 // TODO - Crate feature for rand
 // TODO - Switch to assert_eq! macro for docstrings instead of println!
+// TODO - Switch to SIMD for vector operations as well as make cfg elements for utilizing SIMD only if available

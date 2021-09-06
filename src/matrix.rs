@@ -1,5 +1,4 @@
 use crate::vector::VectorN;
-use std::convert::TryInto;
 use num_traits::cast::AsPrimitive;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
