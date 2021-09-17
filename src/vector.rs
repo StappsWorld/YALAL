@@ -1,31 +1,32 @@
+use num_traits::cast::AsPrimitive;
+
 #[derive(Debug, Clone, Copy, PartialOrd, Default)]
 pub struct Vector {
-    x: f64,
-    y: f64,
+    x_y: [f64; 2],
     heading: f64,
     mag: f64,
 }
 impl Vector {
-
     /// Creates a new Vector
     /// # Arguments
-    /// * 'raw_x' - The x component of this Vector
-    /// * 'raw_y' - The y component of this Vector
+    /// * 'x' - The x component of this Vector
+    /// * 'y' - The y component of this Vector
     ///
     /// # Example
     /// ```
     /// use yalal::vector::Vector;
     /// let v = Vector::new(2, 2);
     /// ```
-    pub fn new<T: 'static + Into<f64> + Copy>(raw_x: T, raw_y: T) -> Vector {
-        let x: f64 = raw_x.into();
-        let y: f64 = raw_y.into();
-        Vector {
-            x: x,
-            y: y,
+    pub fn new<T: AsPrimitive<f64>>(x: T, y: T) -> Vector {
+        let x: f64 = x.as_();
+        let y: f64 = y.as_();
+        let mut v = Vector {
+            x_y: [x, y],
             heading: y.atan2(x).to_degrees(),
-            mag: (x * x + y * y).sqrt(),
-        }
+            mag: 0.0,
+        };
+        v.update_mag();
+        v
     }
 
     /// Creates a standard unit Vector with an x and y component of 1
@@ -34,6 +35,7 @@ impl Vector {
     /// ```
     /// use yalal::vector::Vector;
     /// let v = Vector::standard_unit();
+    /// assert_eq(v, Vector::new(1, 1));
     /// ```
     pub fn standard_unit() -> Vector {
         Vector::new(1, 1)
@@ -41,19 +43,18 @@ impl Vector {
 
     /// Creates a unit vector with the heading of the angle provided
     /// # Arguments
-    /// * 'raw_heading' - The heading of this unit vector provided in **degrees**
+    /// * 'heading' - The heading of this unit vector provided in **degrees**
     ///
     /// # Example
     /// ```
     /// use yalal::vector::Vector;
     /// let v = Vector::from_angle(90);
     /// ```
-    pub fn from_angle<T: 'static + Into<f64> + Copy>(raw_heading: T) -> Vector {
-        let heading_deg: f64 = raw_heading.into();
-        let mut v = Vector::standard_unit();
+    pub fn from_angle<T: AsPrimitive<f64>>(heading: T) -> Vector {
+        let heading_deg: f64 = heading.as_();
+        let mut v = Vector::default();
         v.mag = 1.0;
         v.set_heading(heading_deg);
-        v.update_mag();
         v
     }
 
@@ -82,10 +83,20 @@ impl Vector {
     /// println!("This vector has the coordinates ({}, {})!", x, y); // Should print '... coordinates (5, 10)!'
     /// ```
     pub fn x_y(&self) -> (f64, f64) {
-        (self.x, self.y)
+        (self.x_y[0], self.x_y[1])
     }
 
-    /// Sets this vector's x component to the argument 'raw_x'
+    /// Helper function to get reference to x component of this vector
+    fn x(&mut self) -> &mut f64 {
+        &mut self.x_y[0]
+    }
+
+    /// Helper function to get reference to y component of this vector
+    fn y(&mut self) -> &mut f64 {
+        &mut self.x_y[1]
+    }
+
+    /// Sets this vector's x component to the argument 'x'
     ///
     /// # Example
     /// ```
@@ -95,12 +106,13 @@ impl Vector {
     /// v.set_x(12.0);
     /// println!("Our vector is now {}", v); // Should print '... <12, 10>'
     /// ```
-    pub fn set_x<T: 'static + Into<f64> + Copy + std::convert::From<f64>>(&mut self, raw_x: T) {
-        let y = self.y;
-        *self = Vector::new(raw_x, y.into());
+    pub fn set_x<T: AsPrimitive<f64>>(&mut self, x: T) {
+        *self = Vector::new(x.as_(), *self.y());
     }
 
-    /// Sets this vector's y component to the argument 'raw_y'
+    /// Sets this vector's y component to the argument 'y'
+    /// # Arguments
+    /// * 'y' - The y component of this Vector to be set
     ///
     /// # Example
     /// ```
@@ -110,9 +122,8 @@ impl Vector {
     /// v.set_y(12.0);
     /// println!("Our vector is now {}", v); // Should print '... <5.0, 12.0>'
     /// ```
-    pub fn set_y<T: 'static + Into<f64> + Copy + std::convert::From<f64>>(&mut self, raw_y: T) {
-        let x = self.x;
-        *self = Vector::new(x, raw_y.into());
+    pub fn set_y<T: AsPrimitive<f64>>(&mut self, y: T) {
+        *self = Vector::new(*self.x(), y.as_());
     }
 
     /// Internally normalizes this vector.
@@ -126,8 +137,9 @@ impl Vector {
     /// println!("Out vector is now {}", v); // Should print '... <0.6, 0.8>'
     /// ```
     pub fn normalize(&mut self) {
-        self.x /= self.mag;
-        self.y /= self.mag;
+        for comp in self.x_y.iter_mut() {
+            *comp /= self.mag;
+        }
         self.mag = 1.0;
     }
 
@@ -171,10 +183,12 @@ impl Vector {
     /// v.set_mag(5.0);
     /// println!("Our vector is now {}", v); // Should print '... <3.0, 4.0>'
     /// ```
-    pub fn set_mag(&mut self, mag: f64) {
+    pub fn set_mag<T: AsPrimitive<f64>>(&mut self, mag: T) {
+        let mag = mag.as_();
         self.normalize();
-        self.x *= mag;
-        self.y *= mag;
+        for comp in self.x_y.iter_mut() {
+            *comp *= mag;
+        }
         self.mag = mag;
     }
 
@@ -190,7 +204,11 @@ impl Vector {
     }
 
     fn update_mag(&mut self) {
-        self.mag = (self.x * self.x + self.y * self.y).sqrt();
+        let mut sum = 0.0;
+        for comp in self.x_y.iter() {
+            sum += comp.powi(2);
+        }
+        self.mag = sum.sqrt();
     }
 
     /// Returns the heading of the vector in **degrees**
@@ -215,7 +233,8 @@ impl Vector {
     /// v.set_heading(90.0);
     /// println!("Our vector is now {} and has an angle of {}", v, v.heading()); // Should print '... <0.0, 1.0> ... 90.0'
     /// ```
-    pub fn set_heading(&mut self, heading: f64) {
+    pub fn set_heading<T: AsPrimitive<f64>>(&mut self, heading: T) {
+        let heading = heading.as_();
         let radians = heading.to_radians();
 
         let mut x = radians.cos();
@@ -230,27 +249,28 @@ impl Vector {
             y = y.floor();
         }
 
-        self.x = x * self.mag;
-        self.y = y * self.mag;
+        assert_eq!((x * x + y * y).sqrt(), 1.0);
+        self.x_y = [x, y];
         self.heading = heading;
     }
 
     /// Adds to this vectors current heading by the angle provided
     /// # Arguments
-    /// * 'heading' - The angle to add to this vector's heading
+    /// * 'angle' - The angle to add to this vector's heading
     /// # Example
     /// ```
     /// use yalal::vector::Vector;
     /// let mut v = Vector::new(1.0, 0.0);
     /// println!("Our vector {} has an angle of {}", v, v.heading()); // Should print '... <1.0, 0.0> ... 0.0'
-    /// v.add_heading(90.0);
+    /// v.rotate(90.0);
     /// println!("Our vector is now {} and has an angle of {}", v, v.heading()); // Should print '... <0.0, 1.0> ... 90.0'
     /// ```
-    pub fn rotate(&mut self, angle : f64) {
-        self.set_heading(self.heading() + angle);
+    pub fn rotate<T: AsPrimitive<f64>>(&mut self, angle: T) {
+        self.set_heading(self.heading() + angle.as_());
     }
 
-    pub fn limit_mag(&mut self, max: f64) {
+    pub fn limit_mag<T: AsPrimitive<f64>>(&mut self, max: T) {
+        let max = max.as_();
         if self.mag > max * max {
             self.set_mag(max);
         }
@@ -261,7 +281,11 @@ impl Vector {
     }
 
     pub fn dot(&self, other: &Vector) -> f64 {
-        (self.x * other.x) + (self.y * other.y)
+        let mut sum = 0.0;
+        for (a, b) in self.x_y.iter().zip(other.x_y.iter()) {
+            sum += a * b;
+        } // Using Rust optimization will allow for SIMD optimizations here
+        sum
     }
 
     pub fn cos_angle_between(&self, other: &Vector) -> f64 {
@@ -290,55 +314,63 @@ impl Vector {
         )
     }
 
-    pub fn angle_given_dot(mag_a: f64, mag_b: f64, dot: f64) -> f64 {
+    pub fn angle_given_dot<T: AsPrimitive<f64>>(mag_a: T, mag_b: T, dot: T) -> f64 {
+        let mag_a = mag_a.as_();
+        let mag_b = mag_b.as_();
+        let dot = dot.as_();
         let mag = mag_a * mag_b;
         (dot / mag).acos().to_degrees()
     }
 
-    pub fn angle_given_cross(mag_a: f64, mag_b: f64, cross: f64) -> f64 {
+    pub fn angle_given_cross<T: AsPrimitive<f64>>(mag_a: T, mag_b: T, cross: T) -> f64 {
+        let mag_a = mag_a.as_();
+        let mag_b = mag_b.as_();
+        let cross = cross.as_();
         let mag = mag_a * mag_b;
         (cross / mag).asin().to_degrees()
     }
 }
 impl std::ops::Add<Vector> for Vector {
     fn add(self, other: Vector) -> Vector {
-        let x = self.x + other.x;
-        let y = self.y + other.y;
-        Vector::new(x, y)
+        let mut out = [0.0; 2];
+        for (n, (a, b)) in self.x_y.iter().zip(other.x_y.iter()).enumerate() {
+            out[n] = a + b;
+        }
+        Vector::from(out)
     }
 
     type Output = Vector;
 }
 impl std::ops::Sub<Vector> for Vector {
     fn sub(self, other: Vector) -> Vector {
-        let x = self.x - other.x;
-        let y = self.y - other.y;
-        Vector::new(x, y)
+        let mut out = [0.0; 2];
+        for (n, (a, b)) in self.x_y.iter().zip(other.x_y.iter()).enumerate() {
+            out[n] = a - b;
+        }
+        Vector::from(out)
     }
 
     type Output = Vector;
 }
 impl std::ops::AddAssign for Vector {
     fn add_assign(&mut self, other: Vector) {
-        let x = self.x + other.x;
-        let y = self.y + other.y;
-        *self = Vector::new(x, y);
+        *self = *self + other;
     }
 }
 impl std::ops::SubAssign for Vector {
     fn sub_assign(&mut self, other: Vector) {
-        let x = self.x - other.x;
-        let y = self.y - other.y;
-        *self = Vector::new(x, y);
+        *self = *self - other;
     }
 }
 impl std::ops::Mul<f64> for Vector {
     type Output = Vector;
 
-    fn mul(self, other: f64) -> Vector {
-        let x = self.x * other;
-        let y = self.y * other;
-        Vector::new(x, y)
+    fn mul(self, rhs: f64) -> Vector {
+        let mut out = [0.0; 2];
+        for (n, a) in self.x_y.iter().enumerate() {
+            out[n] = a * rhs;
+        }
+        Vector::from(out)
     }
 }
 impl std::ops::Mul<Vector> for Vector {
@@ -354,9 +386,7 @@ impl std::ops::Mul<Vector> for Vector {
 }
 impl std::ops::MulAssign<f64> for Vector {
     fn mul_assign(&mut self, rhs: f64) {
-        let x = self.x * rhs;
-        let y = self.y * rhs;
-        *self = Vector::new(x, y);
+        *self = *self * rhs;
     }
 }
 impl std::ops::Div<f64> for Vector {
@@ -374,9 +404,7 @@ impl std::ops::DivAssign<f64> for Vector {
 impl std::ops::Neg for Vector {
     type Output = Vector;
     fn neg(self) -> Vector {
-        let x = -self.x;
-        let y = -self.y;
-        Vector::new(x, y)
+        self * -1.0
     }
 }
 impl From<Vector3d> for Vector {
@@ -392,19 +420,23 @@ impl From<VectorN> for Vector {
         )
     }
 }
+impl From<[f64; 2]> for Vector {
+    fn from(v: [f64; 2]) -> Vector {
+        Vector::new(v[0], v[1])
+    }
+}
 impl std::cmp::PartialEq for Vector {
     fn eq(&self, other: &Vector) -> bool {
-        (self.x == other.x || (self.x - other.x).abs() < 1e-10)
-            && (self.y == other.y || (self.y - other.y).abs() < 1e-10)
-            && ((self.heading.is_nan() && other.heading.is_nan())
-                || self.heading == other.heading
-                || (self.heading - other.heading).abs() < 1e-10)
-            && (self.mag == other.mag || (self.mag - other.mag).abs() < 1e-10)
+        self.x_y
+            .iter()
+            .zip(other.x_y.iter())
+            .all(|(a, b)| a - b < 1e-10)
     }
 }
 impl std::fmt::Display for Vector {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "<{}, {}>", self.x, self.y)
+        let (x, y) = self.x_y();
+        write!(f, "<{}, {}>", x, y)
     }
 }
 
@@ -417,38 +449,65 @@ pub struct Vector3d {
     mag: f64,
 }
 impl Vector3d {
-    pub fn new<T: 'static + Into<f64> + Copy>(x_raw: T, y_raw: T, z_raw: T) -> Vector3d {
-        let x: f64 = x_raw.into();
-        let y: f64 = y_raw.into();
-        let z: f64 = z_raw.into();
+    /// Creates a new Vector3d
+    /// # Arguments
+    /// * 'x' - The x component of this Vector
+    /// * 'y' - The y component of this Vector
+    /// * 'z' - The z component of this Vector
+    ///
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector3d;
+    /// let v = Vector::new(2, 2, 2);
+    /// ```
+    pub fn new<T: AsPrimitive<f64>>(x: T, y: T, z: T) -> Vector3d {
+        let x: f64 = x.as_();
+        let y: f64 = y.as_();
+        let z: f64 = z.as_();
         let mag = (x * x + y * y + z * z).sqrt();
         Vector3d {
             x: x,
             y: y,
             z: z,
-            heading: (1.0 / (y / x).tan(), 1.0 / (z / mag).cos()),
+            heading: ((y / x).atan(), (z / mag).acos()),
             mag: mag,
         }
     }
 
-    // This function generates a Vector3d from a theta (angle from x axis to [v.x, v.y]) and phi (angle from y axis [v.y, v.z]) in degrees.
-    pub fn from_heading<T: 'static + Into<f64> + Copy + std::convert::From<f64>>(
-        theta_raw: T,
-        phi_raw: T,
-    ) -> Vector3d {
-        let theta_deg: f64 = theta_raw.into();
+    /// Generates a Vector3d from a theta and phi in degrees.
+    /// See [this](https://en.wikipedia.org/wiki/Spherical_coordinate_system#Cartesian_coordinates) for more information.
+    /// # Arguments
+    /// * 'x' - The x component of this Vector
+    /// * 'y' - The y component of this Vector
+    /// * 'z' - The z component of this Vector
+    ///
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector3d;
+    /// let v = Vector3d::from_heading(90, 45);
+    /// ```
+    pub fn from_heading<T: AsPrimitive<f64>>(theta: T, phi: T) -> Vector3d {
+        let theta_deg: f64 = theta.as_();
         let theta: f64 = theta_deg.to_radians();
-        let phi_deg: f64 = phi_raw.into();
+        let phi_deg: f64 = phi.as_();
         let phi: f64 = phi_deg.to_radians();
+        let (x, y, z) = (theta.cos() * phi.sin(), theta.sin() * phi.sin(), phi.cos());
         Vector3d {
-            x: theta.cos(),
-            y: theta.sin(),
-            z: phi.cos(),
+            x,
+            y,
+            z,
             heading: (theta, phi),
             mag: 1.0,
         }
     }
 
+    /// Generates a random Vector3d with all coordinates ranging from -1.0 to 1.0
+    ///
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector3d;
+    /// let v = Vector3d::random();
+    /// ```
     pub fn random() -> Vector3d {
         let mut rng = rand::thread_rng();
 
@@ -458,45 +517,82 @@ impl Vector3d {
         Vector3d::new(x, y, z)
     }
 
+    /// Returns this Vectors x, y, and z components in a tuple of f64s
+    ///
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector3d;
+    /// let v = Vector3d::new(1, 2, 3);
+    /// let (x, y, z) = v.x_y_z();
+    /// ```
     pub fn x_y_z(&self) -> (f64, f64, f64) {
         (self.x, self.y, self.z)
     }
 
-    pub fn set_x<T: 'static + Into<f64> + Copy + std::convert::From<f64>>(&mut self, x_raw: T) {
-        let x: f64 = x_raw.into();
+    /// Sets this vector's x component to the argument 'x'
+    ///
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector3d;
+    /// let mut v = Vector3d::new(5, 10, 15);
+    /// v.set_x(12.0);
+    /// assert_eq!(v, Vector3d::new(12, 10, 15));
+    /// ```
+    pub fn set_x<T: AsPrimitive<f64>>(&mut self, x: T) {
+        let x: f64 = x.as_();
         *self = Vector3d::new(x, self.y, self.z);
     }
 
-    pub fn set_y<T: 'static + Into<f64> + Copy + std::convert::From<f64>>(&mut self, y_raw: T) {
-        let y: f64 = y_raw.into();
+    /// Sets this vector's y component to the argument 'y'
+    ///
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector3d;
+    /// let mut v = Vector3d::new(5, 10, 15);
+    /// v.set_y(12.0);
+    /// assert_eq!(v, Vector3d::new(5, 12, 15));
+    /// ```
+    pub fn set_y<T: AsPrimitive<f64>>(&mut self, y: T) {
+        let y: f64 = y.as_();
         *self = Vector3d::new(self.x, y, self.z);
     }
 
-    pub fn set_z<T: 'static + Into<f64> + Copy + std::convert::From<f64>>(&mut self, z_raw: T) {
-        let z: f64 = z_raw.into();
+    /// Sets this vector's z component to the argument 'z'
+    ///
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector3d;
+    /// let mut v = Vector3d::new(5, 10, 15);
+    /// v.set_z(12.0);
+    /// assert_eq!(v, Vector3d::new(5, 10, 12));
+    /// ```
+    pub fn set_z<T: AsPrimitive<f64>>(&mut self, z: T) {
+        let z: f64 = z.as_();
         *self = Vector3d::new(self.x, self.y, z);
     }
 
-    // This function sets theta (angle from x axis to [v.x, v.y]) in degrees.
-    pub fn set_theta<T: 'static + Into<f64> + Copy + std::convert::From<f64>>(
-        &mut self,
-        theta_raw: T,
-    ) {
-        self.set_heading(theta_raw, self.heading.1.into());
+    /// Sets this vector's theta
+    ///
+    /// # Example
+    /// ```
+    /// use yalal::vector::Vector3d;
+    /// let mut v = Vector3d::new(3, 4, 1);
+    /// v.set_theta(90);
+    // TODO - Fix this
+    /// assert_eq!(v, Vector3d::new(0, 5, 1));
+    /// ```
+    pub fn set_theta<T: AsPrimitive<f64>>(&mut self, theta: T) {
+        self.set_heading(theta.as_(), self.heading.1);
     }
 
     // This function sets phi (angle from y axis [v.y, v.z]) in degrees.
-    pub fn set_phi<T: 'static + Into<f64> + Copy + std::convert::From<f64>>(&mut self, phi_raw: T) {
-        self.set_heading(self.heading.0, phi_raw.into());
+    pub fn set_phi<T: AsPrimitive<f64>>(&mut self, phi_raw: T) {
+        self.set_heading(self.heading.0, phi_raw.as_());
     }
 
     // This function sets the heading in (theta, phi) format in degrees.
-    pub fn set_heading<T: 'static + Into<f64> + Copy + std::convert::From<f64>>(
-        &mut self,
-        theta_raw: T,
-        phi_raw: T,
-    ) {
-        *self = Vector3d::from_heading(theta_raw, phi_raw) * self.mag;
+    pub fn set_heading<T: AsPrimitive<f64>>(&mut self, theta: T, phi: T) {
+        *self = Vector3d::from_heading(theta, phi) * self.mag;
     }
 
     // A function that normalizes this vector.
@@ -658,7 +754,7 @@ impl std::ops::Neg for Vector3d {
 }
 impl From<Vector> for Vector3d {
     fn from(vec: Vector) -> Vector3d {
-        Vector3d::new(vec.x, vec.y, 0.0)
+        Vector3d::new(vec.x_y().0, vec.x_y().1, 0.0)
     }
 }
 impl From<VectorN> for Vector3d {
@@ -674,14 +770,8 @@ impl std::cmp::PartialEq for Vector3d {
     fn eq(&self, other: &Vector3d) -> bool {
         // Equal with an error margin of 0.0000000001 :)
         let fuzzy_eq = |a: f64, b: f64| a == b || (a - b).abs() < 1e-10;
-        let nan_or_fuzzy_eq = |a: f64, b: f64| a.is_nan() && b.is_nan() || fuzzy_eq(a, b);
 
-        fuzzy_eq(self.x, other.x)
-            && fuzzy_eq(self.y, other.y)
-            && fuzzy_eq(self.z, other.z)
-            && fuzzy_eq(self.mag, other.mag)
-            && nan_or_fuzzy_eq(self.heading.0, other.heading.0)
-            && nan_or_fuzzy_eq(self.heading.1, other.heading.1)
+        fuzzy_eq(self.x, other.x) && fuzzy_eq(self.y, other.y) && fuzzy_eq(self.z, other.z)
     }
 }
 impl std::fmt::Display for Vector3d {
@@ -697,9 +787,9 @@ pub struct VectorN {
     angles: Vec<f64>,
 }
 impl VectorN {
-    pub fn new(data: Vec<f64>) -> VectorN {
+    pub fn new<T: AsPrimitive<f64>>(data: Vec<T>) -> VectorN {
         let mut v = VectorN {
-            data: data.clone(),
+            data: data.iter().map(|x| x.as_()).collect(),
             mag: 0.0,
             angles: vec![0.0; data.len() - 1],
         };
@@ -734,15 +824,11 @@ impl VectorN {
         }
     }
 
-    pub fn set_component<T: 'static + Into<f64> + Copy>(
-        &mut self,
-        index: usize,
-        val: T,
-    ) -> Option<()> {
+    pub fn set_component<T: AsPrimitive<f64>>(&mut self, index: usize, val: T) -> Option<()> {
         if index >= self.data.len() {
             return None;
         }
-        self.data[index] = val.into();
+        self.data[index] = val.as_();
         Some(())
     }
 
@@ -782,8 +868,9 @@ impl VectorN {
         }
     }
 
-    pub fn set_angle(&mut self, index: usize, angle: f64) -> Option<()> {
+    pub fn set_angle<T: AsPrimitive<f64>>(&mut self, index: usize, angle: T) -> Option<()> {
         // Algorithm from: https://en.wikipedia.org/wiki/N-sphere#Spherical_coordinates
+        let angle = angle.as_();
         if index >= self.angles.len() {
             None
         } else {
@@ -921,7 +1008,7 @@ impl std::ops::Neg for VectorN {
 }
 impl From<Vector> for VectorN {
     fn from(vec: Vector) -> VectorN {
-        VectorN::new(vec![vec.x, vec.y])
+        VectorN::new(vec.x_y.to_vec())
     }
 }
 impl From<Vector3d> for VectorN {
@@ -935,7 +1022,6 @@ impl std::cmp::PartialEq for VectorN {
             .iter()
             .zip(other.data.iter())
             .all(|(a, b)| a - b < 1e-10)
-            && self.mag() - other.mag() < 1e-10
     }
 }
 impl std::fmt::Display for VectorN {

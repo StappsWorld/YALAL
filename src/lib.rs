@@ -367,7 +367,7 @@ mod tests {
 
     #[test]
     fn test_matrix_identity() {
-        let u = Matrix::identity(3usize).unwrap();
+        let u = Matrix::identity(3usize);
         let v = Matrix::new(3usize, 3usize, vec![
             1.0, 0.0, 0.0,
             0.0, 1.0, 0.0,
@@ -394,6 +394,16 @@ mod tests {
             3.0, 5.0, 6.0,
         ]).unwrap();
         assert_eq!(u.triangular(), Triangular::Lower);
+    }
+
+    #[test]
+    fn test_matrix_not_triangular() {
+        let u = Matrix::new(3usize, 3usize, vec![
+            1.0, 2.0, 3.0,
+            0.0, 0.0, 5.0,
+            0.0, 0.0, 6.0,
+        ]).unwrap();
+        assert_eq!(u.triangular(), Triangular::Not);
     }
 
     #[test]
@@ -456,3 +466,6 @@ mod tests {
 }
 
 // TODO - Write docstrings for all functions and structs
+// TODO - Crate feature for rand
+// TODO - Switch to assert_eq! macro for docstrings instead of println!
+// TODO - Switch to SIMD for vector operations as well as make cfg elements for utilizing SIMD only if available

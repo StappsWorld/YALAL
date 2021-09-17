@@ -1,5 +1,5 @@
 use crate::vector::VectorN;
-use std::convert::TryInto;
+use num_traits::cast::AsPrimitive;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Triangular {
@@ -16,16 +16,10 @@ pub struct Matrix {
     triangular: Triangular,
 }
 impl Matrix {
-    pub fn new_empty<T: TryInto<usize>>(rows_raw: T, cols_raw: T) -> Result<Matrix, &'static str> {
-        let rows = match rows_raw.try_into() {
-            Ok(r) => r,
-            Err(_) => return Err("Failed to convert rows into usize!"),
-        };
-        let cols = match cols_raw.try_into() {
-            Ok(c) => c,
-            Err(_) => return Err("Failed to convert cols into usize!"),
-        };
-        Ok(Matrix {
+    pub fn new_empty<T: AsPrimitive<usize>>(rows_raw: T, cols_raw: T) -> Option<Matrix> {
+        let rows : usize = rows_raw.as_();
+        let cols : usize = cols_raw.as_();
+        Some(Matrix {
             rows,
             cols,
             data: vec![0.0; rows * cols],
@@ -33,23 +27,15 @@ impl Matrix {
         })
     }
 
-    pub fn new<T: TryInto<usize>>(
+    pub fn new<T: AsPrimitive<usize>>(
         rows_raw: T,
         cols_raw: T,
         data: Vec<f64>,
-    ) -> Result<Matrix, &'static str> {
-        let rows = match rows_raw.try_into() {
-            Ok(r) => r,
-            Err(_) => return Err("Failed to convert rows into usize!"),
-        };
-        let cols = match cols_raw.try_into() {
-            Ok(r) => r,
-            Err(_) => return Err("Failed to convert cols into usize!"),
-        };
+    ) -> Option<Matrix> {
+        let rows = rows_raw.as_();
+        let cols = cols_raw.as_();
         if rows * cols != data.len() {
-            return Err(
-                "rows and cols are not the correct dimensions for a matrix with the provided data!",
-            );
+            return None
         }
         let mut m = Matrix {
             rows,
@@ -58,19 +44,16 @@ impl Matrix {
             triangular: Triangular::Not,
         };
         m.update_triangular();
-        Ok(m)
+        Some(m)
     }
 
-    pub fn identity<T: TryInto<usize>>(size_raw: T) -> Option<Matrix> {
-        let size = match size_raw.try_into() {
-            Ok(s) => s,
-            Err(_) => return None,
-        };
+    pub fn identity<T: AsPrimitive<usize>>(size_raw: T) -> Matrix {
+        let size = size_raw.as_();
         let mut m = Matrix::new_empty(size, size).unwrap();
         for i in 0..size {
             m.set(i, i, 1.0).unwrap();
         }
-        Some(m)
+        m
     }
 
     pub fn rows(&self) -> usize {
@@ -85,15 +68,9 @@ impl Matrix {
         &self.data
     }
 
-    pub fn get<T: TryInto<usize>>(&self, row: T, col: T) -> Result<f64, &'static str> {
-        let row = match row.try_into() {
-            Ok(r) => r,
-            Err(_) => return Err("Failed to convert row into usize!"),
-        };
-        let col = match col.try_into() {
-            Ok(r) => r,
-            Err(_) => return Err("Failed to convert col into usize!"),
-        };
+    pub fn get<T: AsPrimitive<usize>>(&self, row: T, col: T) -> Result<f64, &'static str> {
+        let row = row.as_();
+        let col = col.as_();
         if row >= self.rows {
             return Err("Parameter row was greater than the amount of rows in this matrix!");
         }
@@ -104,15 +81,9 @@ impl Matrix {
         Ok(self.data[row * self.cols + col])
     }
 
-    pub fn get_mut<T: TryInto<usize>>(&mut self, row: T, col: T) -> Result<&mut f64, &'static str> {
-        let row = match row.try_into() {
-            Ok(r) => r,
-            Err(_) => return Err("Failed to convert row into usize!"),
-        };
-        let col = match col.try_into() {
-            Ok(r) => r,
-            Err(_) => return Err("Failed to convert col into usize!"),
-        };
+    pub fn get_mut<T: AsPrimitive<usize>>(&mut self, row: T, col: T) -> Result<&mut f64, &'static str> {
+        let row = row.as_();
+        let col = col.as_();
         if row >= self.rows {
             return Err("Parameter row was greater than the amount of rows in this matrix!");
         }
@@ -123,15 +94,9 @@ impl Matrix {
         Ok(self.data.get_mut(row * self.cols + col).unwrap())
     }
 
-    pub fn set<T: TryInto<usize>>(&mut self, row: T, col: T, value: f64) -> Result<(), &'static str> {
-        let row = match row.try_into() {
-            Ok(r) => r,
-            Err(_) => return Err("Failed to convert row into usize!"),
-        };
-        let col = match col.try_into() {
-            Ok(r) => r,
-            Err(_) => return Err("Failed to convert col into usize!"),
-        };
+    pub fn set<T: AsPrimitive<usize>>(&mut self, row: T, col: T, value: f64) -> Result<(), &'static str> {
+        let row = row.as_();
+        let col = col.as_();
         if row >= self.rows {
             return Err("Parameter row was greater than the amount of rows in this matrix!");
         }
@@ -180,7 +145,9 @@ impl Matrix {
     }
 
     /// Produces the minor, or the determinant of the submatrix denoted by removing row and col from this matrix.
-    pub fn minor(&self, row: usize, col: usize) -> Option<f64> {
+    pub fn minor<T: AsPrimitive<usize>>(&self, row: T, col: T) -> Option<f64> {
+        let row = row.as_();
+        let col = col.as_();
         if self.rows != self.cols {
             return None;
         }
@@ -249,7 +216,9 @@ impl Matrix {
         Some(m)
     }
 
-    pub fn cofactor_val(&self, row: usize, col: usize) -> Option<f64> {
+    pub fn cofactor_val<T : AsPrimitive<usize>>(&self, row: T, col: T) -> Option<f64> {
+        let row = row.as_();
+        let col = col.as_();
         if row >= self.rows || col >= self.cols {
             return None;
         }
@@ -285,8 +254,8 @@ impl Matrix {
                 let val_neg =
                     (trace - ((trace * trace) - (4.0 * self.determinant().unwrap())).sqrt()) / 2.0;
 
-                let vec_pos = self.clone() - Matrix::identity(self.rows).unwrap() * val_pos;
-                let vec_neg = self.clone() - Matrix::identity(self.rows).unwrap() * val_neg;
+                let vec_pos = self.clone() - Matrix::identity(self.rows) * val_pos;
+                let vec_neg = self.clone() - Matrix::identity(self.rows) * val_neg;
                 Some(vec![
                     (vec_pos.get_column(0).unwrap(), val_pos),
                     (vec_neg.get_column(1).unwrap(), val_neg),
@@ -346,7 +315,8 @@ impl Matrix {
         Some(sum)
     }
 
-    pub fn get_column(&self, col: usize) -> Option<VectorN> {
+    pub fn get_column<T: AsPrimitive<usize>>(&self, col: T) -> Option<VectorN> {
+        let col = col.as_();
         if col >= self.cols {
             return None;
         }
