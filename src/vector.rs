@@ -50,7 +50,8 @@ impl Vector {
     /// ```
     pub fn from_angle<T: 'static + Into<f64> + Copy>(raw_heading: T) -> Vector {
         let heading_deg: f64 = raw_heading.into();
-        let mut v = Vector::default();
+        let mut v = Vector::standard_unit();
+        v.mag = 1.0;
         v.set_heading(heading_deg);
         v.update_mag();
         v
